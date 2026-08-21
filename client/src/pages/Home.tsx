@@ -3,7 +3,8 @@
  * Warm editorial commerce with paper-framed product imagery and quiet, purposeful interactions.
  * This page retains the catalogue collage and adds quick-view, filter, and cart-drawer workflows.
  */
-import { useMemo, useState, type ComponentType, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type ComponentType, type FormEvent } from "react";
+import { useLocation } from "wouter";
 import {
   ArrowRight,
   BadgeCheck,
@@ -50,6 +51,7 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { CART_STORAGE_KEY, readStored, WISHLIST_STORAGE_KEY, writeStored } from "@/lib/commerce-storage";
 
 type Product = {
   id: number;
@@ -182,8 +184,9 @@ const categoryShortcuts: Record<string, string> = {
 };
 
 export default function Home() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<Set<number>>(new Set());
+  const [, navigate] = useLocation();
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => readStored<CartItem[]>(CART_STORAGE_KEY, []));
+  const [wishlist, setWishlist] = useState<Set<number>>(() => new Set(readStored<Product[]>(WISHLIST_STORAGE_KEY, []).map((product) => product.id)));
   const [search, setSearch] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -192,6 +195,20 @@ export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [priceFilter, setPriceFilter] = useState("All prices");
   const [sortOrder, setSortOrder] = useState("popular");
+
+  useEffect(() => {
+    const interceptCheckout = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target.closest("button") : null;
+      if (target?.textContent?.includes("Continue to checkout")) {
+        event.preventDefault();
+        event.stopPropagation();
+        setIsCartOpen(false);
+        navigate("/checkout");
+      }
+    };
+    document.addEventListener("click", interceptCheckout, true);
+    return () => document.removeEventListener("click", interceptCheckout, true);
+  }, [navigate]);
 
   const catalogueCategories = useMemo(
     () => ["All", ...Array.from(new Set(products.map((product) => product.category)))],
@@ -238,12 +255,13 @@ export default function Home() {
   const addToCart = (product: Product, revealCart = true) => {
     setCartItems((current) => {
       const existing = current.find((item) => item.id === product.id);
-      if (existing) {
-        return current.map((item) =>
+      const next = existing
+        ? current.map((item) =>
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
-        );
-      }
-      return [...current, { ...product, quantity: 1 }];
+        )
+        : [...current, { ...product, quantity: 1 }];
+      writeStored(CART_STORAGE_KEY, next);
+      return next;
     });
     if (revealCart) setIsCartOpen(true);
     toast.success(`${product.name} added to your cart`, {
@@ -252,17 +270,23 @@ export default function Home() {
   };
 
   const updateQuantity = (id: number, amount: number) => {
-    setCartItems((current) =>
-      current.flatMap((item) => {
+    setCartItems((current) => {
+      const next = current.flatMap((item) => {
         if (item.id !== id) return [item];
         const quantity = item.quantity + amount;
         return quantity > 0 ? [{ ...item, quantity }] : [];
-      }),
-    );
+      });
+      writeStored(CART_STORAGE_KEY, next);
+      return next;
+    });
   };
 
   const removeFromCart = (product: Product) => {
-    setCartItems((current) => current.filter((item) => item.id !== product.id));
+    setCartItems((current) => {
+      const next = current.filter((item) => item.id !== product.id);
+      writeStored(CART_STORAGE_KEY, next);
+      return next;
+    });
     toast.message("Removed from your cart", { description: product.name });
   };
 
@@ -272,6 +296,11 @@ export default function Home() {
       const next = new Set(current);
       if (saved) next.delete(product.id);
       else next.add(product.id);
+      const storedItems = readStored<Product[]>(WISHLIST_STORAGE_KEY, []);
+      const nextItems = saved
+        ? storedItems.filter((item) => item.id !== product.id)
+        : storedItems.some((item) => item.id === product.id) ? storedItems : [...storedItems, product];
+      writeStored(WISHLIST_STORAGE_KEY, nextItems);
       return next;
     });
     toast(saved ? "Removed from saved items" : "Saved for later", { description: product.name });
@@ -332,7 +361,7 @@ export default function Home() {
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             <button type="button" onClick={() => placeholderAction("Delivery location")} className="hidden items-center gap-2 rounded-xl px-2.5 py-2 text-left transition hover:bg-[#F5F0EA] xl:flex"><MapPin className="h-4 w-4 text-[#EF6A3A]" /><span className="leading-tight"><span className="block text-[10px] font-bold text-[#87908D]">Deliver to</span><span className="block text-xs font-extrabold">Chennai 600001</span></span></button>
             <button type="button" onClick={() => placeholderAction("Account")} className="grid h-10 w-10 place-items-center rounded-xl border border-transparent text-[#314047] transition hover:border-[#EAE4DB] hover:bg-white" aria-label="Account"><CircleUserRound className="h-5 w-5" /></button>
-            <button type="button" onClick={() => placeholderAction("Saved items")} className="relative grid h-10 w-10 place-items-center rounded-xl border border-transparent text-[#314047] transition hover:border-[#EAE4DB] hover:bg-white" aria-label="Saved items"><Heart className="h-5 w-5" />{wishlist.size > 0 && <span className="absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#EF6A3A] px-1 text-[9px] font-black text-white">{wishlist.size}</span>}</button>
+            <button type="button" onClick={() => navigate("/saved")} className="relative grid h-10 w-10 place-items-center rounded-xl border border-transparent text-[#314047] transition hover:border-[#EAE4DB] hover:bg-white" aria-label="Saved items"><Heart className="h-5 w-5" />{wishlist.size > 0 && <span className="absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#EF6A3A] px-1 text-[9px] font-black text-white">{wishlist.size}</span>}</button>
             <button type="button" onClick={() => setIsCartOpen(true)} className="relative grid h-10 w-10 place-items-center rounded-xl bg-[#17232B] text-white transition hover:bg-[#EF6A3A]" aria-label="Open cart"><ShoppingCart className="h-5 w-5" />{cartCount > 0 && <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#EF6A3A] px-1 text-[10px] font-black text-white ring-2 ring-[#FFFDF9]">{cartCount}</span>}</button>
           </div>
         </div>
