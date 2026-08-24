@@ -2,11 +2,13 @@
  * PRIME CART — Sunlit Mercantile saved items
  * A quiet, paper-framed holding place for products worth returning to.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, ArrowRight, Heart, Package, ShoppingBag, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { CART_STORAGE_KEY, readStored, WISHLIST_STORAGE_KEY, writeStored } from "@/lib/commerce-storage";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 type Product = {
   id: number;
@@ -23,19 +25,44 @@ type Product = {
 };
 
 type CartItem = Product & { quantity: number };
+type CommerceProduct = Omit<Product, "id" | "badge"> & { productId: number; badge?: string | null };
+type CommerceCartItem = CommerceProduct & { quantity: number };
 
 const formattedPrice = (price: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(price);
 
 export default function SavedItems() {
   const [, navigate] = useLocation();
+  const { isAuthenticated } = useAuth();
   const [savedItems, setSavedItems] = useState<Product[]>(() => readStored<Product[]>(WISHLIST_STORAGE_KEY, []));
+  const commerce = trpc.commerce.get.useQuery(undefined, { enabled: isAuthenticated });
+  const setRemoteCart = trpc.commerce.setCart.useMutation();
+  const setRemoteWishlist = trpc.commerce.setWishlist.useMutation();
   const totalSaved = useMemo(() => savedItems.length, [savedItems]);
+  const toRemoteProduct = (product: Product): CommerceProduct => ({ ...product, productId: product.id, badge: product.badge ?? null });
+  const toLocalProduct = (product: CommerceProduct): Product => ({ id: product.productId, name: product.name, category: product.category, price: product.price, originalPrice: product.originalPrice, offer: product.offer, delivery: product.delivery, image: product.image, tone: product.tone, popularity: product.popularity, badge: product.badge ?? undefined });
+
+  useEffect(() => {
+    if (!isAuthenticated || !commerce.data) return;
+    const next = commerce.data.wishlist.map(toLocalProduct);
+    setSavedItems(next);
+    writeStored(WISHLIST_STORAGE_KEY, next);
+  }, [commerce.data, isAuthenticated]);
+
+  const persistWishlist = (items: Product[]) => {
+    writeStored(WISHLIST_STORAGE_KEY, items);
+    if (isAuthenticated) setRemoteWishlist.mutate({ items: items.map(toRemoteProduct) });
+  };
+
+  const persistCart = (items: CartItem[]) => {
+    writeStored(CART_STORAGE_KEY, items);
+    if (isAuthenticated) setRemoteCart.mutate({ items: items.map((item): CommerceCartItem => ({ ...toRemoteProduct(item), quantity: item.quantity })) });
+  };
 
   const removeSaved = (product: Product) => {
     setSavedItems((current) => {
       const next = current.filter((item) => item.id !== product.id);
-      writeStored(WISHLIST_STORAGE_KEY, next);
+      persistWishlist(next);
       return next;
     });
     toast.message("Removed from saved items", { description: product.name });
@@ -47,7 +74,7 @@ export default function SavedItems() {
     const nextCart = existing
       ? currentCart.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item)
       : [...currentCart, { ...product, quantity: 1 }];
-    writeStored(CART_STORAGE_KEY, nextCart);
+    persistCart(nextCart);
     toast.success(`${product.name} added to your cart`, { description: `${formattedPrice(product.price)} · ${product.delivery}` });
   };
 

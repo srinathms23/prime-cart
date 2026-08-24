@@ -2,11 +2,13 @@
  * PRIME CART — Sunlit Mercantile checkout
  * A focused, low-noise shipping form paired with a transparent editorial order summary.
  */
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, ArrowRight, CheckCircle2, CreditCard, LockKeyhole, MapPin, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { CART_STORAGE_KEY, readStored, writeStored } from "@/lib/commerce-storage";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 
 type CartItem = {
   id: number;
@@ -21,6 +23,8 @@ type CartItem = {
   popularity: number;
   quantity: number;
 };
+
+type CommerceCartItem = Omit<CartItem, "id" | "badge"> & { productId: number; badge?: string | null };
 
 type ShippingForm = {
   fullName: string;
@@ -40,10 +44,25 @@ const initialForm: ShippingForm = { fullName: "", email: "", phone: "", address:
 
 export default function Checkout() {
   const [, navigate] = useLocation();
+  const { isAuthenticated } = useAuth();
   const [cartItems, setCartItems] = useState<CartItem[]>(() => readStored<CartItem[]>(CART_STORAGE_KEY, []));
+  const commerce = trpc.commerce.get.useQuery(undefined, { enabled: isAuthenticated });
+  const setRemoteCart = trpc.commerce.setCart.useMutation();
   const [form, setForm] = useState<ShippingForm>(initialForm);
   const [delivery, setDelivery] = useState("standard");
   const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || !commerce.data) return;
+    const next = commerce.data.cart.map((item) => ({ id: item.productId, name: item.name, category: item.category, price: item.price, originalPrice: item.originalPrice, offer: item.offer, delivery: item.delivery, image: item.image, tone: item.tone, popularity: item.popularity, quantity: item.quantity }));
+    setCartItems(next);
+    writeStored(CART_STORAGE_KEY, next);
+  }, [commerce.data, isAuthenticated]);
+
+  const persistCart = (items: CartItem[]) => {
+    writeStored(CART_STORAGE_KEY, items);
+    if (isAuthenticated) setRemoteCart.mutate({ items: items.map((item): CommerceCartItem => ({ ...item, productId: item.id, badge: null })) });
+  };
 
   const subtotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItems]);
   const shipping = subtotal === 0 || subtotal >= 2000 || delivery === "express" ? (delivery === "express" ? 149 : 0) : 99;
@@ -57,7 +76,7 @@ export default function Checkout() {
       navigate("/");
       return;
     }
-    writeStored(CART_STORAGE_KEY, []);
+    persistCart([]);
     setCartItems([]);
     setIsComplete(true);
     toast.success("Shipping details saved", { description: "Your order is ready for payment connection." });
@@ -73,7 +92,7 @@ export default function Checkout() {
 }
 
 function CheckoutHeader() {
-  return <header className="border-b border-[#E7E2DA] bg-[#FFFDF9]/95 backdrop-blur-xl"><div className="container flex h-[74px] items-center justify-between gap-4"><Link href="/" className="flex items-center gap-2.5" aria-label="Return to PRIME CART home"><img src="/manus-storage/prime-cart-spark_1191fbd0.png" alt="" className="h-8 w-8 object-contain" /><span className="brand-wordmark text-[18px] font-black tracking-[-0.075em]">PRIME<span className="text-[#EF6A3A]">.</span><span className="ml-1 font-semibold text-[#526069]">CART</span></span></Link><span className="inline-flex items-center gap-2 text-[11px] font-extrabold tracking-[0.12em] text-[#667571] uppercase"><ShieldCheck className="h-4 w-4 text-[#6A866E]" /> Checkout protected</span></div></header>;
+  return <header className="border-b border-[#E7E2DA] bg-[#FFFDF9]/95 backdrop-blur-xl"><div className="container flex h-[74px] items-center justify-between gap-4"><Link href="/" className="flex items-center gap-2.5" aria-label="Return to PRIME CART home"><img src="/manus-storage/prime-cart-spark_1191fbd0.png" alt="" className="h-8 w-8 object-contain" /><span className="brand-wordmark text-[18px] font-black tracking-[-0.075em]">PRIME<span className="text-[#EF6A3A]">.</span><span className="ml-1 font-semibold text-[#526069]">CART</span></span></Link><span className="inline-flex items-center gap-2 text-[11px] font-extrabold tracking-[0.12em] text-[#667571] uppercase"><ShieldCheck className="h-4 w-4 text-[#6A866E]" /> Free to shop · no membership fee</span></div></header>;
 }
 
 function Field({ label, name, value, onChange, placeholder, required, type = "text", className = "" }: { label: string; name: string; value: string; onChange: (value: string) => void; placeholder: string; required?: boolean; type?: string; className?: string }) {

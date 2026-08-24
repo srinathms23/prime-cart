@@ -10,3 +10,17 @@
 - [x] Make cart-add confirmation consistent across product entry points.
 - [x] Create a checkout page with shipping form validation and order summary.
 - [x] Verify wishlist, cart feedback, and checkout flows on desktop and mobile.
+- [x] Review the existing client data and prepare the project for authenticated customer data.
+- [x] Add customer account registration, login, and account-access UI.
+- [x] Resolve upgraded full-stack dependencies and verify the customer authentication flow compiles.
+- [ ] Verify signed-out and signed-in account states across desktop and mobile.
+- [ ] Synchronize customer cart and saved items across authenticated sessions.
+- [ ] Wire the storefront to protected commerce procedures and verify authenticated cross-device sync.
+- [ ] Verify authenticated cart and wishlist persistence after a fresh signed-in session.
+- [x] Expand the marketplace product catalogue with verified online product information.
+- [x] Replace placeholder catalogue metadata with sourced product records and distinct matching imagery.
+- [ ] Verify the expanded sourced catalogue through filtering, quick view, saved items, cart, and checkout.
+- [x] Review existing account and checkout language for customer cost barriers.
+- [x] Add clear free-to-shop and no-membership-fee messaging across customer access points.
+- [x] Verify the free customer journey and production build.
+- [ ] Verify authenticated shopping, account, and catalogue flows across device layouts.

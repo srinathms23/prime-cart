@@ -3,8 +3,10 @@
  * Warm editorial commerce with paper-framed product imagery and quiet, purposeful interactions.
  * This page retains the catalogue collage and adds quick-view, filter, and cart-drawer workflows.
  */
-import { useEffect, useMemo, useState, type ComponentType, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type FormEvent } from "react";
 import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
 import {
   ArrowRight,
   BadgeCheck,
@@ -52,6 +54,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { CART_STORAGE_KEY, readStored, WISHLIST_STORAGE_KEY, writeStored } from "@/lib/commerce-storage";
+import { trpc } from "@/lib/trpc";
 
 type Product = {
   id: number;
@@ -68,6 +71,9 @@ type Product = {
 };
 
 type CartItem = Product & { quantity: number };
+
+type CommerceProduct = Omit<Product, "id" | "badge"> & { productId: number; badge?: string | null };
+type CommerceCartItem = CommerceProduct & { quantity: number };
 
 type Category = {
   label: string;
@@ -163,6 +169,45 @@ const products: Product[] = [
     popularity: 88,
     badge: "New arrival",
   },
+  {
+    id: 7,
+    name: "TERTIAL Work lamp, dark grey",
+    category: "Lighting",
+    price: 1490,
+    originalPrice: 1490,
+    offer: "IKEA price",
+    delivery: "Light bulb sold separately",
+    image: "/manus-storage/ikea-tertial-xl_56b27ef2.jpg",
+    tone: "bg-[#E9ECEB]",
+    popularity: 89,
+    badge: "IKEA India",
+  },
+  {
+    id: 8,
+    name: "ÅRSTID Table lamp, brass/white",
+    category: "Lighting",
+    price: 2990,
+    originalPrice: 2990,
+    offer: "IKEA price",
+    delivery: "Light bulb sold separately",
+    image: "/manus-storage/ikea-arstid-xl_290e6fc8.jpg",
+    tone: "bg-[#F3E9D8]",
+    popularity: 85,
+    badge: "IKEA India",
+  },
+  {
+    id: 9,
+    name: "TÄRNABY Table lamp, dimmable beige",
+    category: "Lighting",
+    price: 2190,
+    originalPrice: 2190,
+    offer: "IKEA price",
+    delivery: "Light bulb sold separately",
+    image: "/manus-storage/ikea-taernaby-xl_3eb47634.jpg",
+    tone: "bg-[#EFE8DD]",
+    popularity: 91,
+    badge: "IKEA India",
+  },
 ];
 
 const formattedPrice = (price: number) =>
@@ -184,6 +229,9 @@ const categoryShortcuts: Record<string, string> = {
 };
 
 export default function Home() {
+  // Auth is initiated only from interaction handlers to preserve the one-time OAuth state.
+  const { user, loading, isAuthenticated, logout } = useAuth();
+
   const [, navigate] = useLocation();
   const [cartItems, setCartItems] = useState<CartItem[]>(() => readStored<CartItem[]>(CART_STORAGE_KEY, []));
   const [wishlist, setWishlist] = useState<Set<number>>(() => new Set(readStored<Product[]>(WISHLIST_STORAGE_KEY, []).map((product) => product.id)));
@@ -195,6 +243,54 @@ export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [priceFilter, setPriceFilter] = useState("All prices");
   const [sortOrder, setSortOrder] = useState("popular");
+  const syncedUserId = useRef<number | null>(null);
+  const commerce = trpc.commerce.get.useQuery(undefined, { enabled: isAuthenticated });
+  const syncCommerce = trpc.commerce.sync.useMutation();
+  const setRemoteCart = trpc.commerce.setCart.useMutation();
+  const setRemoteWishlist = trpc.commerce.setWishlist.useMutation();
+
+  const toRemoteProduct = (product: Product): CommerceProduct => ({ ...product, productId: product.id, badge: product.badge ?? null });
+  const toLocalProduct = (product: CommerceProduct): Product => ({ id: product.productId, name: product.name, category: product.category, price: product.price, originalPrice: product.originalPrice, offer: product.offer, delivery: product.delivery, image: product.image, tone: product.tone, popularity: product.popularity, badge: product.badge ?? undefined });
+  const toRemoteCart = (items: CartItem[]): CommerceCartItem[] => items.map((item) => ({ ...toRemoteProduct(item), quantity: item.quantity }));
+  const savedProducts = useMemo(() => products.filter((product) => wishlist.has(product.id)), [wishlist]);
+
+  useEffect(() => {
+    if (!isAuthenticated) syncedUserId.current = null;
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user || !commerce.isSuccess || syncedUserId.current === user.id) return;
+    syncedUserId.current = user.id;
+    const guestWishlist = readStored<Product[]>(WISHLIST_STORAGE_KEY, []);
+    syncCommerce.mutate({ cart: toRemoteCart(cartItems), wishlist: guestWishlist.map(toRemoteProduct) }, {
+      onSuccess: (data) => {
+        const nextCart = data.cart.map((item) => ({ ...toLocalProduct(item), quantity: item.quantity }));
+        const nextWishlist = data.wishlist.map(toLocalProduct);
+        setCartItems(nextCart);
+        setWishlist(new Set(nextWishlist.map((item) => item.id)));
+        writeStored(CART_STORAGE_KEY, nextCart);
+        writeStored(WISHLIST_STORAGE_KEY, nextWishlist);
+      },
+      onError: () => {
+        syncedUserId.current = null;
+        toast.error("Your account cart could not sync yet", { description: "Your items remain safe on this device." });
+      },
+    });
+  }, [cartItems, commerce.isSuccess, isAuthenticated, syncCommerce, user]);
+
+  const persistCart = (items: CartItem[]) => {
+    writeStored(CART_STORAGE_KEY, items);
+    if (isAuthenticated) {
+      setRemoteCart.mutate({ items: toRemoteCart(items) }, { onError: () => toast.error("Cart sync paused", { description: "Please try again shortly." }) });
+    }
+  };
+
+  const persistWishlist = (items: Product[]) => {
+    writeStored(WISHLIST_STORAGE_KEY, items);
+    if (isAuthenticated) {
+      setRemoteWishlist.mutate({ items: items.map(toRemoteProduct) }, { onError: () => toast.error("Saved items sync paused", { description: "Please try again shortly." }) });
+    }
+  };
 
   useEffect(() => {
     const interceptCheckout = (event: MouseEvent) => {
@@ -260,7 +356,7 @@ export default function Home() {
           item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
         )
         : [...current, { ...product, quantity: 1 }];
-      writeStored(CART_STORAGE_KEY, next);
+      persistCart(next);
       return next;
     });
     if (revealCart) setIsCartOpen(true);
@@ -276,7 +372,7 @@ export default function Home() {
         const quantity = item.quantity + amount;
         return quantity > 0 ? [{ ...item, quantity }] : [];
       });
-      writeStored(CART_STORAGE_KEY, next);
+      persistCart(next);
       return next;
     });
   };
@@ -284,7 +380,7 @@ export default function Home() {
   const removeFromCart = (product: Product) => {
     setCartItems((current) => {
       const next = current.filter((item) => item.id !== product.id);
-      writeStored(CART_STORAGE_KEY, next);
+      persistCart(next);
       return next;
     });
     toast.message("Removed from your cart", { description: product.name });
@@ -296,11 +392,11 @@ export default function Home() {
       const next = new Set(current);
       if (saved) next.delete(product.id);
       else next.add(product.id);
-      const storedItems = readStored<Product[]>(WISHLIST_STORAGE_KEY, []);
+      const storedItems = readStored<Product[]>(WISHLIST_STORAGE_KEY, savedProducts);
       const nextItems = saved
         ? storedItems.filter((item) => item.id !== product.id)
         : storedItems.some((item) => item.id === product.id) ? storedItems : [...storedItems, product];
-      writeStored(WISHLIST_STORAGE_KEY, nextItems);
+      persistWishlist(nextItems);
       return next;
     });
     toast(saved ? "Removed from saved items" : "Saved for later", { description: product.name });
@@ -360,7 +456,7 @@ export default function Home() {
           </form>
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             <button type="button" onClick={() => placeholderAction("Delivery location")} className="hidden items-center gap-2 rounded-xl px-2.5 py-2 text-left transition hover:bg-[#F5F0EA] xl:flex"><MapPin className="h-4 w-4 text-[#EF6A3A]" /><span className="leading-tight"><span className="block text-[10px] font-bold text-[#87908D]">Deliver to</span><span className="block text-xs font-extrabold">Chennai 600001</span></span></button>
-            <button type="button" onClick={() => placeholderAction("Account")} className="grid h-10 w-10 place-items-center rounded-xl border border-transparent text-[#314047] transition hover:border-[#EAE4DB] hover:bg-white" aria-label="Account"><CircleUserRound className="h-5 w-5" /></button>
+            <button type="button" onClick={() => { if (isAuthenticated) { void logout().then(() => toast.success("Signed out of PRIME CART")); } else { startLogin(); } }} className="inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-2.5 text-[#314047] transition hover:border-[#EAE4DB] hover:bg-white" aria-label={isAuthenticated ? "Sign out of account" : "Join or sign in for free"} title={isAuthenticated ? "Sign out" : "Join or sign in for free"}><CircleUserRound className="h-5 w-5" />{!loading && <span className="hidden max-w-[110px] truncate text-xs font-extrabold sm:inline">{isAuthenticated ? `Hi, ${user?.name?.split(" ")[0] ?? "there"}` : "Join free"}</span>}</button>
             <button type="button" onClick={() => navigate("/saved")} className="relative grid h-10 w-10 place-items-center rounded-xl border border-transparent text-[#314047] transition hover:border-[#EAE4DB] hover:bg-white" aria-label="Saved items"><Heart className="h-5 w-5" />{wishlist.size > 0 && <span className="absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-[#EF6A3A] px-1 text-[9px] font-black text-white">{wishlist.size}</span>}</button>
             <button type="button" onClick={() => setIsCartOpen(true)} className="relative grid h-10 w-10 place-items-center rounded-xl bg-[#17232B] text-white transition hover:bg-[#EF6A3A]" aria-label="Open cart"><ShoppingCart className="h-5 w-5" />{cartCount > 0 && <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#EF6A3A] px-1 text-[10px] font-black text-white ring-2 ring-[#FFFDF9]">{cartCount}</span>}</button>
           </div>
@@ -393,7 +489,8 @@ export default function Home() {
 }
 
 function ProductCard({ product, saved, onAdd, onSave, onQuickView }: { product: Product; saved: boolean; onAdd: () => void; onSave: () => void; onQuickView: () => void }) {
-  return <article className="product-card group"><div className={`product-media relative overflow-hidden ${product.tone}`}><img src={product.image} alt={product.name} className="catalogue-image h-full w-full rounded-[18px] object-cover transition duration-500 group-hover:scale-[1.045]" /><div className="absolute top-3 left-3 flex flex-wrap gap-1.5"><span className="offer-ticket px-2.5 py-1 text-[9px] font-black tracking-[0.08em] text-white uppercase">{product.offer}</span>{product.badge && <span className="rounded-full border border-[#E8DED3] bg-white/95 px-2.5 py-1 text-[9px] font-black tracking-[0.06em] text-[#52615F] uppercase">{product.badge}</span>}</div><button type="button" onClick={onSave} aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name} for later`} className={`absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-full border transition ${saved ? "border-[#EF6A3A] bg-[#EF6A3A] text-white" : "border-white/70 bg-white/90 text-[#314047] hover:text-[#EF6A3A]"}`}><Heart className={`h-4 w-4 ${saved ? "fill-current" : ""}`} /></button><button type="button" onClick={onQuickView} className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-xl bg-[#17232B]/92 px-3 py-2 text-[11px] font-extrabold text-white opacity-100 shadow-sm transition hover:bg-[#EF6A3A] sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"><Eye className="h-3.5 w-3.5" /> Quick view</button></div><div className="px-1 pt-4"><p className="text-[10px] font-extrabold tracking-[0.14em] text-[#89918E] uppercase">{product.category}</p><h3 className="mt-1.5 line-clamp-1 text-[15px] font-extrabold tracking-[-0.02em] text-[#283940]">{product.name}</h3><div className="mt-3 flex items-end gap-2"><span className="text-[21px] font-black tracking-[-0.055em] text-[#17232B]">{formattedPrice(product.price)}</span><span className="mb-0.5 text-xs font-semibold text-[#919895] line-through">{formattedPrice(product.originalPrice)}</span></div><p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#70807B]"><Package className="h-3.5 w-3.5 text-[#6A866E]" />{product.delivery}</p><div className="mt-4 grid grid-cols-[1fr_44px] gap-2"><button type="button" onClick={onAdd} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#DEE4DF] bg-white text-sm font-extrabold text-[#314047] transition hover:border-[#17232B] hover:bg-[#17232B] hover:text-white active:scale-[0.98]"><ShoppingBag className="h-4 w-4" /> Add to cart</button><button type="button" onClick={onQuickView} className="grid h-11 place-items-center rounded-2xl border border-[#E7DED4] bg-[#FBF8F4] text-[#485B5C] transition hover:border-[#EF6A3A] hover:text-[#EF6A3A]" aria-label={`Quick view ${product.name}`}><Eye className="h-4 w-4" /></button></div></div></article>;
+  const hasSavings = product.originalPrice > product.price;
+  return <article className="product-card group"><div className={`product-media relative overflow-hidden ${product.tone}`}><img src={product.image} alt={product.name} className="catalogue-image h-full w-full rounded-[18px] object-cover transition duration-500 group-hover:scale-[1.045]" /><div className="absolute top-3 left-3 flex flex-wrap gap-1.5"><span className="offer-ticket px-2.5 py-1 text-[9px] font-black tracking-[0.08em] text-white uppercase">{product.offer}</span>{product.badge && <span className="rounded-full border border-[#E8DED3] bg-white/95 px-2.5 py-1 text-[9px] font-black tracking-[0.06em] text-[#52615F] uppercase">{product.badge}</span>}</div><button type="button" onClick={onSave} aria-label={saved ? `Remove ${product.name} from saved items` : `Save ${product.name} for later`} className={`absolute top-3 right-3 grid h-9 w-9 place-items-center rounded-full border transition ${saved ? "border-[#EF6A3A] bg-[#EF6A3A] text-white" : "border-white/70 bg-white/90 text-[#314047] hover:text-[#EF6A3A]"}`}><Heart className={`h-4 w-4 ${saved ? "fill-current" : ""}`} /></button><button type="button" onClick={onQuickView} className="absolute right-3 bottom-3 inline-flex items-center gap-1.5 rounded-xl bg-[#17232B]/92 px-3 py-2 text-[11px] font-extrabold text-white opacity-100 shadow-sm transition hover:bg-[#EF6A3A] sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"><Eye className="h-3.5 w-3.5" /> Quick view</button></div><div className="px-1 pt-4"><p className="text-[10px] font-extrabold tracking-[0.14em] text-[#89918E] uppercase">{product.category}</p><h3 className="mt-1.5 line-clamp-1 text-[15px] font-extrabold tracking-[-0.02em] text-[#283940]">{product.name}</h3><div className="mt-3 flex items-end gap-2"><span className="text-[21px] font-black tracking-[-0.055em] text-[#17232B]">{formattedPrice(product.price)}</span>{hasSavings && <span className="mb-0.5 text-xs font-semibold text-[#919895] line-through">{formattedPrice(product.originalPrice)}</span>}</div><p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#70807B]"><Package className="h-3.5 w-3.5 text-[#6A866E]" />{product.delivery}</p><div className="mt-4 grid grid-cols-[1fr_44px] gap-2"><button type="button" onClick={onAdd} className="flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#DEE4DF] bg-white text-sm font-extrabold text-[#314047] transition hover:border-[#17232B] hover:bg-[#17232B] hover:text-white active:scale-[0.98]"><ShoppingBag className="h-4 w-4" /> Add to cart</button><button type="button" onClick={onQuickView} className="grid h-11 place-items-center rounded-2xl border border-[#E7DED4] bg-[#FBF8F4] text-[#485B5C] transition hover:border-[#EF6A3A] hover:text-[#EF6A3A]" aria-label={`Quick view ${product.name}`}><Eye className="h-4 w-4" /></button></div></div></article>;
 }
 
 function CatalogueInterlude({ onClick }: { onClick: () => void }) {
