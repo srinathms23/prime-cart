@@ -2,7 +2,7 @@
  * PRIME CART — Sunlit Mercantile checkout
  * A focused shipping form and order summary that hands off card processing to hosted Stripe Checkout.
  */
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation } from "wouter";
 import { ArrowLeft, ArrowRight, CreditCard, Loader2, LockKeyhole, MapPin, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { toast } from "sonner";
@@ -11,21 +11,13 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { startLogin } from "@/const";
 import { hydrateProduct, toProductSnapshot, type CartItem, type ProductSnapshot } from "@/lib/electronics-catalogue";
+import { cartFingerprint, mergeCartItems, shouldHydrateRemoteCart } from "@/lib/checkout-cart";
 
 type CommerceCartItem = ProductSnapshot & { quantity: number };
 type ShippingForm = { fullName: string; email: string; phone: string; address: string; apartment: string; city: string; state: string; postalCode: string };
 
 const formattedPrice = (price: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(price);
 const initialForm: ShippingForm = { fullName: "", email: "", phone: "", address: "", apartment: "", city: "", state: "Tamil Nadu", postalCode: "" };
-
-function mergeCartItems(localItems: CartItem[], remoteItems: CartItem[]) {
-  const merged = new Map(remoteItems.map((item) => [item.id, item]));
-  localItems.forEach((item) => {
-    const remote = merged.get(item.id);
-    merged.set(item.id, remote ? { ...remote, ...item, quantity: Math.max(remote.quantity, item.quantity) } : item);
-  });
-  return Array.from(merged.values());
-}
 
 export default function Checkout() {
   const [, navigate] = useLocation();
@@ -36,6 +28,7 @@ export default function Checkout() {
   const commerce = trpc.commerce.get.useQuery(undefined, { enabled: isAuthenticated });
   const setRemoteCart = trpc.commerce.setCart.useMutation();
   const createStripeCheckout = trpc.payments.createCheckout.useMutation();
+  const hydratedRemoteCartRef = useRef<string | null>(null);
 
   useEffect(() => {
     const paymentStatus = new URLSearchParams(window.location.search).get("payment");
@@ -49,15 +42,25 @@ export default function Checkout() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated || !commerce.data) return;
+    if (!isAuthenticated) {
+      hydratedRemoteCartRef.current = null;
+      return;
+    }
+    if (!commerce.data) return;
     const remote = commerce.data.cart.map((item) => ({ ...hydrateProduct(item), quantity: item.quantity }));
-    const next = mergeCartItems(readStored<CartItem[]>(CART_STORAGE_KEY, []), remote);
-    setCartItems(next);
-    writeStored(CART_STORAGE_KEY, next);
-    if (next.length !== remote.length || next.some((item) => remote.find((remoteItem) => remoteItem.id === item.id)?.quantity !== item.quantity)) {
+    const remoteFingerprint = cartFingerprint(remote);
+    if (!shouldHydrateRemoteCart(hydratedRemoteCartRef.current, remote)) return;
+    hydratedRemoteCartRef.current = remoteFingerprint;
+
+    const local = readStored<CartItem[]>(CART_STORAGE_KEY, []);
+    const next = mergeCartItems(local, remote);
+    const nextFingerprint = cartFingerprint(next);
+    if (cartFingerprint(local) !== nextFingerprint) writeStored(CART_STORAGE_KEY, next);
+    setCartItems((current) => cartFingerprint(current) === nextFingerprint ? current : next);
+    if (nextFingerprint !== remoteFingerprint) {
       setRemoteCart.mutate({ items: next.map((item): CommerceCartItem => ({ ...toProductSnapshot(item), quantity: item.quantity })) });
     }
-  }, [commerce.data, isAuthenticated, setRemoteCart]);
+  }, [commerce.data, isAuthenticated]);
 
   const persistCart = (items: CartItem[]) => {
     writeStored(CART_STORAGE_KEY, items);

@@ -45,6 +45,8 @@
 - [ ] Verify desktop, tablet, and mobile marketplace browsing, cart, wishlist, quick-view, Buy Now, and checkout interactions.
 - [ ] Interactively verify category browsing, search, quick view, saved items, cart, and checkout actions at a mobile breakpoint.
 - [ ] Interactively verify category browsing, search, quick view, saved items, cart, and checkout actions at a tablet breakpoint.
+- [x] Fix the Checkout authenticated-cart hydration effect that triggers a maximum update depth render loop.
+- [x] Add a regression test for stable checkout cart hydration after authenticated commerce data loads.
 - [x] Ensure Buy Now writes the selected product into checkout before route navigation in an authenticated session.
 - [x] Prevent expanded catalogue snapshot fields from failing authenticated cart synchronization.
 - [x] Remove the sidebar filter section while retaining instant search and sort controls.
