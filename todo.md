@@ -24,3 +24,6 @@
 - [x] Add clear free-to-shop and no-membership-fee messaging across customer access points.
 - [x] Verify the free customer journey and production build.
 - [ ] Verify authenticated shopping, account, and catalogue flows across device layouts.
+- [x] Confirm the live-payment scope and prepare PRIME CART for secure payment infrastructure.
+- [x] Connect payment infrastructure and implement checkout payment handoff.
+- [ ] Validate the payment handoff without submitting a live charge.

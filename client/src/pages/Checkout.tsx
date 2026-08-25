@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { CART_STORAGE_KEY, readStored, writeStored } from "@/lib/commerce-storage";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { startLogin } from "@/const";
 
 type CartItem = {
   id: number;
@@ -48,6 +49,7 @@ export default function Checkout() {
   const [cartItems, setCartItems] = useState<CartItem[]>(() => readStored<CartItem[]>(CART_STORAGE_KEY, []));
   const commerce = trpc.commerce.get.useQuery(undefined, { enabled: isAuthenticated });
   const setRemoteCart = trpc.commerce.setCart.useMutation();
+  const createStripeCheckout = trpc.payments.createCheckout.useMutation();
   const [form, setForm] = useState<ShippingForm>(initialForm);
   const [delivery, setDelivery] = useState("standard");
   const [isComplete, setIsComplete] = useState(false);
@@ -76,10 +78,18 @@ export default function Checkout() {
       navigate("/");
       return;
     }
-    persistCart([]);
-    setCartItems([]);
-    setIsComplete(true);
-    toast.success("Shipping details saved", { description: "Your order is ready for payment connection." });
+    if (!isAuthenticated) {
+      toast.message("Join free to continue securely", { description: "A free account keeps your cart and payment history together." });
+      startLogin();
+      return;
+    }
+    createStripeCheckout.mutate({ shipping: form }, {
+      onSuccess: ({ url }) => {
+        toast.success("Opening secure payment", { description: "Stripe Checkout opens in a new tab. PRIME CART never sees your card details." });
+        window.open(url, "_blank", "noopener,noreferrer");
+      },
+      onError: (error) => toast.error("Secure payment could not start", { description: error.message }),
+    });
   };
 
   if (isComplete) {

@@ -7,3 +7,5 @@ At a 390px mobile viewport, the top navigation, product cards, added product ima
 After replacing placeholder additions, desktop and mobile captures show the three verified IKEA India records—TERTIAL, ÅRSTID, and TÄRNABY—with distinct matching product imagery, sourced names, and sourced listed prices. Their cards participate in the same catalogue grid, quick-view actions, save control, cart flow, and category filtering without visible overflow.
 
 The authenticated desktop preview displayed the signed-in customer state. A database verification confirmed a server-persisted saved item for that authenticated account; customer commerce procedures are also covered by Vitest contract tests. The checkout header now explicitly states “Free to shop · no membership fee,” and the production build completed after this copy change.
+
+The storefront was checked in an earlier signed-out state and then in the authenticated state on desktop and mobile. Desktop exposes the personalised account label, while the compact mobile header retains a reachable account icon alongside saved-items and cart controls.
