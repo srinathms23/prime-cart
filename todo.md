@@ -36,3 +36,19 @@
 - [x] Fix authenticated cart synchronization for sourced products stored under PRIME CART asset URLs.
 - [x] Verify cart and wishlist changes in one authenticated session appear in an independent authenticated browser profile.
 - [x] Record separate-session evidence, distinguishing it from the completed same-browser cache-restoration check.
+- [x] Add a clean 20-product electronics catalogue data structure with smartphone, laptop, and gaming-laptop specifications.
+- [x] Extend cart and wishlist persistence to retain the expanded electronics product snapshots.
+- [x] Upgrade product cards with brand, category badge, listed price, supplied product details, and delivery information; omit ratings, reviews, discounts, and bank offers without independently sourced evidence.
+- [x] Replace the requested filter section with category shortcuts, instant search, and sorting controls at the user’s direction.
+- [x] Expand quick view with product specifications, colors, Add to Cart, and Buy Now actions; omit ratings and discount claims without independently sourced evidence.
+- [x] Update cart summary with subtotal, savings, delivery, and total while preserving quantity and remove controls.
+- [ ] Verify desktop, tablet, and mobile marketplace browsing, cart, wishlist, quick-view, Buy Now, and checkout interactions.
+- [ ] Interactively verify category browsing, search, quick view, saved items, cart, and checkout actions at a mobile breakpoint.
+- [ ] Interactively verify category browsing, search, quick view, saved items, cart, and checkout actions at a tablet breakpoint.
+- [x] Ensure Buy Now writes the selected product into checkout before route navigation in an authenticated session.
+- [x] Prevent expanded catalogue snapshot fields from failing authenticated cart synchronization.
+- [x] Remove the sidebar filter section while retaining instant search and sort controls.
+- [x] Add ten supplied furniture, lighting, home-decor, and home-living products to the shared catalogue data.
+- [x] Extend category navigation for Furniture, Lighting, Home Decor, and Home & Living browsing.
+- [x] Verify new home-category products support search, quick view, wishlist, cart, Buy Now, and checkout.
+- [x] Add automated coverage for the 30-product marketplace catalogue and non-negative snapshot popularity.

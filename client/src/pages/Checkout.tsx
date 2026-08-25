@@ -10,26 +10,22 @@ import { CART_STORAGE_KEY, readStored, writeStored } from "@/lib/commerce-storag
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { startLogin } from "@/const";
+import { hydrateProduct, toProductSnapshot, type CartItem, type ProductSnapshot } from "@/lib/electronics-catalogue";
 
-type CartItem = {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  originalPrice: number;
-  offer: string;
-  delivery: string;
-  image: string;
-  tone: string;
-  popularity: number;
-  quantity: number;
-};
-
-type CommerceCartItem = Omit<CartItem, "id" | "badge"> & { productId: number; badge?: string | null };
+type CommerceCartItem = ProductSnapshot & { quantity: number };
 type ShippingForm = { fullName: string; email: string; phone: string; address: string; apartment: string; city: string; state: string; postalCode: string };
 
 const formattedPrice = (price: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(price);
 const initialForm: ShippingForm = { fullName: "", email: "", phone: "", address: "", apartment: "", city: "", state: "Tamil Nadu", postalCode: "" };
+
+function mergeCartItems(localItems: CartItem[], remoteItems: CartItem[]) {
+  const merged = new Map(remoteItems.map((item) => [item.id, item]));
+  localItems.forEach((item) => {
+    const remote = merged.get(item.id);
+    merged.set(item.id, remote ? { ...remote, ...item, quantity: Math.max(remote.quantity, item.quantity) } : item);
+  });
+  return Array.from(merged.values());
+}
 
 export default function Checkout() {
   const [, navigate] = useLocation();
@@ -54,21 +50,22 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!isAuthenticated || !commerce.data) return;
-    const next = commerce.data.cart.map((item) => ({
-      id: item.productId, name: item.name, category: item.category, price: item.price,
-      originalPrice: item.originalPrice, offer: item.offer, delivery: item.delivery,
-      image: item.image, tone: item.tone, popularity: item.popularity, quantity: item.quantity,
-    }));
+    const remote = commerce.data.cart.map((item) => ({ ...hydrateProduct(item), quantity: item.quantity }));
+    const next = mergeCartItems(readStored<CartItem[]>(CART_STORAGE_KEY, []), remote);
     setCartItems(next);
     writeStored(CART_STORAGE_KEY, next);
-  }, [commerce.data, isAuthenticated]);
+    if (next.length !== remote.length || next.some((item) => remote.find((remoteItem) => remoteItem.id === item.id)?.quantity !== item.quantity)) {
+      setRemoteCart.mutate({ items: next.map((item): CommerceCartItem => ({ ...toProductSnapshot(item), quantity: item.quantity })) });
+    }
+  }, [commerce.data, isAuthenticated, setRemoteCart]);
 
   const persistCart = (items: CartItem[]) => {
     writeStored(CART_STORAGE_KEY, items);
-    if (isAuthenticated) setRemoteCart.mutate({ items: items.map((item): CommerceCartItem => ({ ...item, productId: item.id, badge: null })) });
+    if (isAuthenticated) setRemoteCart.mutate({ items: items.map((item): CommerceCartItem => ({ ...toProductSnapshot(item), quantity: item.quantity })) });
   };
 
   const subtotal = useMemo(() => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0), [cartItems]);
+  const savings = useMemo(() => cartItems.reduce((sum, item) => sum + Math.max(0, item.originalPrice - item.price) * item.quantity, 0), [cartItems]);
   const shipping = subtotal === 0 || subtotal >= 2000 || delivery === "express" ? (delivery === "express" ? 149 : 0) : 99;
   const total = subtotal + shipping;
   const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -125,7 +122,7 @@ export default function Checkout() {
             <aside className="rounded-[28px] border border-[#E8E0D6] bg-[#FBF7F1] p-6 shadow-[0_8px_28px_rgba(23,35,43,0.04)] sm:p-7 lg:sticky lg:top-6">
               <div className="flex items-start justify-between gap-4"><div><p className="eyebrow">Order summary</p><h2 className="font-display mt-2 text-[29px] tracking-[-0.045em] text-[#26363D]">Your considered cart.</h2></div><span className="rounded-full bg-[#F4E7DE] px-2.5 py-1 text-[10px] font-black text-[#C9532B]">{itemCount} items</span></div>
               <div className="mt-6 space-y-4">{cartItems.map((item) => <div key={item.id} className="flex gap-3"><img src={item.image} alt={item.name} className={`h-14 w-14 rounded-[14px] border border-[#E7DDD2] object-cover p-1 ${item.tone}`} /><div className="min-w-0 flex-1"><p className="line-clamp-1 text-sm font-extrabold text-[#314148]">{item.name}</p><p className="mt-1 text-xs font-semibold text-[#7B8781]">Qty {item.quantity}</p></div><span className="text-sm font-black tracking-[-0.03em] text-[#26363D]">{formattedPrice(item.price * item.quantity)}</span></div>)}</div>
-              <div className="mt-6 space-y-3 border-t border-[#E5DDD3] pt-5 text-sm"><SummaryRow label="Subtotal" value={formattedPrice(subtotal)} /><SummaryRow label="Delivery" value={shipping === 0 ? "Included" : formattedPrice(shipping)} /><div className="flex items-center justify-between border-t border-[#E5DDD3] pt-4 text-[17px] font-black tracking-[-0.035em] text-[#17232B]"><span>Total</span><span>{formattedPrice(total)}</span></div></div>
+              <div className="mt-6 space-y-3 border-t border-[#E5DDD3] pt-5 text-sm"><SummaryRow label="Subtotal" value={formattedPrice(subtotal)} /><SummaryRow label="Savings" value={savings ? `−${formattedPrice(savings)}` : "—"} /><SummaryRow label="Delivery" value={shipping === 0 ? "Included" : formattedPrice(shipping)} /><div className="flex items-center justify-between border-t border-[#E5DDD3] pt-4 text-[17px] font-black tracking-[-0.035em] text-[#17232B]"><span>Total</span><span>{formattedPrice(total)}</span></div></div>
               <button type="submit" disabled={createStripeCheckout.isPending} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#EF6A3A] text-sm font-extrabold text-white shadow-[0_10px_22px_rgba(239,106,58,0.2)] transition hover:bg-[#17232B] active:scale-[0.98] disabled:cursor-wait disabled:opacity-70">{createStripeCheckout.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CreditCard className="h-4 w-4" />}{createStripeCheckout.isPending ? "Preparing secure payment" : "Continue to secure payment"}{!createStripeCheckout.isPending && <ArrowRight className="h-4 w-4" />}</button>
               <p className="mt-4 flex items-start gap-2 text-[11px] leading-4 font-semibold text-[#7A8780]"><LockKeyhole className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#6A866E]" /> Payments are processed by Stripe. PRIME CART does not store card details.</p>
             </aside>
