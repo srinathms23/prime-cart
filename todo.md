@@ -13,21 +13,24 @@
 - [x] Review the existing client data and prepare the project for authenticated customer data.
 - [x] Add customer account registration, login, and account-access UI.
 - [x] Resolve upgraded full-stack dependencies and verify the customer authentication flow compiles.
-- [ ] Verify signed-out and signed-in account states across desktop and mobile.
-- [ ] Synchronize customer cart and saved items across authenticated sessions.
+- [x] Verify signed-out and signed-in account states across desktop and mobile.
+- [x] Synchronize customer cart and saved items across authenticated sessions.
 - [ ] Wire the storefront to protected commerce procedures and verify authenticated cross-device sync.
-- [ ] Verify authenticated cart and wishlist persistence after a fresh signed-in session.
+- [x] Verify authenticated cart and wishlist persistence after a fresh signed-in session.
+- [ ] Validate restored cart and wishlist data from a separate clean browser session.
 - [x] Expand the marketplace product catalogue with verified online product information.
 - [x] Replace placeholder catalogue metadata with sourced product records and distinct matching imagery.
-- [ ] Verify the expanded sourced catalogue through filtering, quick view, saved items, cart, and checkout.
+- [x] Verify the expanded sourced catalogue through filtering, quick view, saved items, cart, and checkout.
+- [x] Confirm the sourced product quick-view modal shows its larger image and details after synchronized-cart validation.
+- [x] Verify a sourced product in the checkout order summary and no-charge Stripe handoff after cart synchronization.
 - [x] Review existing account and checkout language for customer cost barriers.
 - [x] Add clear free-to-shop and no-membership-fee messaging across customer access points.
 - [x] Verify the free customer journey and production build.
 - [ ] Verify authenticated shopping, account, and catalogue flows across device layouts.
 - [x] Confirm the live-payment scope and prepare PRIME CART for secure payment infrastructure.
 - [x] Connect payment infrastructure and implement checkout payment handoff.
-- [ ] Validate the payment handoff without submitting a live charge.
-- [ ] Verify the signed-in browser checkout handoff, customer feedback, and no-charge return path.
-- [ ] Confirm the hosted Stripe Checkout page opens and returns on cancellation without collecting payment details.
-- [ ] Verify browser-visible checkout failure feedback for an unavailable payment session.
+- [x] Validate the payment handoff without submitting a live charge.
+- [x] Verify the signed-in browser checkout handoff, customer feedback, and no-charge return path.
+- [x] Confirm the hosted Stripe Checkout page opens and returns on cancellation without collecting payment details.
+- [x] Verify browser-visible checkout failure feedback for an unavailable payment session.
 - [x] Fix authenticated cart synchronization for sourced products stored under PRIME CART asset URLs.

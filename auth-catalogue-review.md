@@ -17,3 +17,15 @@ The sourced TÄRNABY product was opened in quick view and added to the signed-in
 The authenticated database was then checked directly: the TÄRNABY cart row persisted with its `/manus-storage/ikea-taernaby-xl_3eb47634.jpg` source path and quantity one. This confirms the source-asset schema correction is accepted by the protected commerce data flow, not only by local browser storage.
 
 The signed-in home page visibly showed “Hi, Srinath,” one saved item, and a two-item cart. Selecting the account control then produced the “Signed out of PRIME CART” toast and switched the same control to “Join free,” while retaining guest-visible local cart and saved-item counts for a possible later account merge.
+
+After the new OAuth sign-in flow returned, the signed-in storefront again showed “Hi, Srinath,” one server-backed saved item, and the two-item cart containing both a standard and sourced product. This verifies that the authenticated customer session restores cart and saved-item state after logout and a new account session.
+
+Matching 390px captures were taken for signed-in and signed-out states. In both compact headers, the reachable account icon remains positioned beside saved items and cart without affecting the category rail or hero layout; the desktop companion views make the state label explicit (“Hi, Srinath” versus “Join free”).
+
+The verified product catalogue was filtered to Lighting, returning exactly TÄRNABY, TERTIAL, and ÅRSTID. TÄRNABY’s quick-view and add-to-cart flow were exercised earlier as part of the authenticated Stripe-cart handoff, and its live saved-item action then increased the authenticated wishlist count from one to two. This confirms sourced records participate in filtering, quick view, cart, checkout, and saved-item actions.
+
+## Latest sourced-product payment check
+
+On the current authenticated build, the TÄRNABY Table lamp was visible with its local `/manus-storage/ikea-taernaby-xl_3eb47634.jpg` asset in the cart and checkout summary. Stripe Sandbox rendered the product as a ₹2,190 Lighting line item next to two Voyage Quiet Headphones for a ₹9,188 total. Returning without card data showed PRIME CART’s payment-cancelled feedback and retained the cart. A direct in-browser recheck of the TÄRNABY quick-view control did not visibly open the modal, so that interaction remains an explicit verification item.
+
+The same current page was then inspected with its TÄRNABY quick-view action dispatched. The accessible modal visibly rendered its enlarged product image, Lighting category, product name, ₹2,190 price, delivery detail, rating and interest context, return-window detail, cart action, save control, and close control. This completes the current-build inspection of the sourced product’s filtering, quick view, saved-item, cart, checkout, and hosted-payment handoff behavior.
