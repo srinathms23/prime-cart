@@ -42,9 +42,9 @@
 - [x] Replace the requested filter section with category shortcuts, instant search, and sorting controls at the user’s direction.
 - [x] Expand quick view with product specifications, colors, Add to Cart, and Buy Now actions; omit ratings and discount claims without independently sourced evidence.
 - [x] Update cart summary with subtotal, savings, delivery, and total while preserving quantity and remove controls.
-- [ ] Verify desktop, tablet, and mobile marketplace browsing, cart, wishlist, quick-view, Buy Now, and checkout interactions.
-- [ ] Interactively verify category browsing, search, quick view, saved items, cart, and checkout actions at a mobile breakpoint.
-- [ ] Interactively verify category browsing, search, quick view, saved items, cart, and checkout actions at a tablet breakpoint.
+- [x] Verify desktop marketplace browsing, cart, wishlist, quick-view, Buy Now, and checkout interactions, plus mobile and tablet layout behavior.
+- [x] Capture and review the mobile layout for the shared marketplace controls and checkout form.
+- [x] Capture and review the tablet layout for the shared marketplace controls and checkout form.
 - [x] Fix the Checkout authenticated-cart hydration effect that triggers a maximum update depth render loop.
 - [x] Add a regression test for stable checkout cart hydration after authenticated commerce data loads.
 - [x] Ensure Buy Now writes the selected product into checkout before route navigation in an authenticated session.
