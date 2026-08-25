@@ -54,5 +54,5 @@
 - [x] Extend category navigation for Furniture, Lighting, Home Decor, and Home & Living browsing.
 - [x] Verify new home-category products support search, quick view, wishlist, cart, Buy Now, and checkout.
 - [x] Add automated coverage for the 30-product marketplace catalogue and non-negative snapshot popularity.
-- [ ] Create a private GitHub repository containing the finalized PRIME CART project.
-- [ ] Verify the GitHub repository’s default branch and provide the live deployment address and publishing steps.
+- [x] Create a private GitHub repository containing the finalized PRIME CART project.
+- [x] Verify the GitHub repository’s default branch and provide the live deployment address and publishing steps.
