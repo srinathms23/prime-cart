@@ -6,6 +6,15 @@ import { z } from "zod";
 import { getUserCart, getUserWishlist, mergeUserCommerce, replaceUserCart, replaceUserWishlist } from "./db";
 import { createCheckoutSession } from "./stripe";
 
+const productImageSchema = z.string().refine((value) => {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return value.startsWith("/manus-storage/");
+  }
+}, "Product image must be a hosted image URL or PRIME CART asset path");
+
 const productSnapshotSchema = z.object({
   productId: z.number().int().positive(),
   name: z.string().min(1).max(255),
@@ -14,7 +23,7 @@ const productSnapshotSchema = z.object({
   originalPrice: z.number().int().nonnegative(),
   offer: z.string().min(1).max(64),
   delivery: z.string().min(1).max(128),
-  image: z.string().url(),
+  image: productImageSchema,
   tone: z.string().min(1).max(64),
   popularity: z.number().int().nonnegative(),
   badge: z.string().max(64).nullable().optional(),

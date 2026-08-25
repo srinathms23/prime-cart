@@ -28,3 +28,6 @@
 - [x] Connect payment infrastructure and implement checkout payment handoff.
 - [ ] Validate the payment handoff without submitting a live charge.
 - [ ] Verify the signed-in browser checkout handoff, customer feedback, and no-charge return path.
+- [ ] Confirm the hosted Stripe Checkout page opens and returns on cancellation without collecting payment details.
+- [ ] Verify browser-visible checkout failure feedback for an unavailable payment session.
+- [x] Fix authenticated cart synchronization for sourced products stored under PRIME CART asset URLs.
