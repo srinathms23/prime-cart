@@ -76,3 +76,6 @@
 - [x] Add automated coverage and responsive rendering checks for discovery, fulfilment empty state, and low-stock workflows.
 - [x] Add automated tests for combined catalogue search, category, and price-range filtering.
 - [x] Document the empty-state-only fulfilment validation scope without fabricating or charging a paid order.
+- [x] Refresh the marketplace and admin surfaces with a light gold visual system and sharper component geometry.
+- [x] Verify responsive visual consistency and production stability after the light gold theme refresh.
+- [x] Record the reviewed routes and breakpoints for the light gold visual refresh.

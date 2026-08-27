@@ -42,7 +42,9 @@ function App() {
       >
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <div className="gold-theme">
+            <Router />
+          </div>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
