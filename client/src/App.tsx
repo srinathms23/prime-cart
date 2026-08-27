@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import SavedItems from "./pages/SavedItems";
 import Checkout from "./pages/Checkout";
 import AdminInventory from "./pages/AdminInventory";
+import AdminFulfillment from "./pages/AdminFulfillment";
 import Orders from "./pages/Orders";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
       <Route path={"/checkout"} component={Checkout} />
       <Route path={"/orders"} component={Orders} />
       <Route path={"/admin"} component={AdminInventory} />
+      <Route path={"/admin/orders"} component={AdminFulfillment} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

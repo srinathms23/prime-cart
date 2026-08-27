@@ -27,3 +27,9 @@ The locally expired Sandbox session did not deliver a cancellation webhook into 
 The managed catalogue uses staged publisher or retailer product imagery with a product-level source-reference register in [`original-image-sources.md`](./original-image-sources.md). Existing cart snapshots that still displayed prior placeholder URLs were refreshed to managed image paths. The account merge now treats the server snapshot as authoritative for product metadata while preserving the higher quantity from a local cart, preventing an older browser cache from restoring a placeholder image.
 
 Narrow desktop, tablet, and mobile layout captures were reviewed. Direct signed-in interaction in a separate narrow browser context could not be completed because that context did not inherit the OAuth session; the responsive claim is therefore limited to rendered layout validation, rather than a separate authenticated-device interaction assertion.
+
+## Stock and fulfilment operations
+
+The live 30-product inventory now contains **187 units on hand**. The administrator workspace reports 14 active products at or below the configured five-unit threshold and provides direct product-edit entry points for restocking. The customer marketplace provides independent search, category, and price-range controls, including composed category-plus-price results.
+
+The dedicated `/admin/orders` workspace exposes only the permitted paid-order progression: `processing` → `shipped` → `delivered`. No new paid test order was fabricated or charged solely to populate this panel. Its authenticated desktop and narrow-viewport **empty state** was reviewed; the status action controls are protected by router authorization and automated transition tests, and will become visible when Stripe confirms a paid processing order.

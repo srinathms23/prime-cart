@@ -69,3 +69,10 @@
 - [x] Remove the temporary no-charge validation order after recording its verified history behavior.
 - [x] Add regression coverage ensuring stale browser cart and wishlist metadata cannot overwrite verified server imagery.
 - [x] Add automated coverage for Stripe Checkout event-to-order-status mapping.
+- [x] Add customer-facing catalogue search plus category and price-range filtering controls.
+- [x] Add protected admin order-fulfilment actions for shipped and delivered statuses.
+- [x] Seed practical stock quantities for the existing 30 managed inventory products.
+- [x] Add low-stock alerts and inventory-at-a-glance metrics to the admin workspace.
+- [x] Add automated coverage and responsive rendering checks for discovery, fulfilment empty state, and low-stock workflows.
+- [x] Add automated tests for combined catalogue search, category, and price-range filtering.
+- [x] Document the empty-state-only fulfilment validation scope without fabricating or charging a paid order.

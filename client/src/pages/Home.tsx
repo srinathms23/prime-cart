@@ -33,6 +33,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { CART_STORAGE_KEY, readStored, WISHLIST_STORAGE_KEY, writeStored } from "@/lib/commerce-storage";
 import { trpc } from "@/lib/trpc";
+import { filterCatalogueProducts, type CataloguePriceRange, type CatalogueSortOrder } from "@/lib/catalogue-filters";
 import {
   electronicsProducts,
   hydrateProduct,
@@ -42,7 +43,6 @@ import {
   type ProductSnapshot,
 } from "@/lib/electronics-catalogue";
 
-type SortOrder = "newest" | "price-low" | "price-high" | "category";
 type CommerceCartItem = ProductSnapshot & { quantity: number };
 
 const categories: { label: ElectronicsCategory; icon: typeof Smartphone; tone: string }[] = [
@@ -92,7 +92,9 @@ export default function Home() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [sortOrder, setSortOrder] = useState<CatalogueSortOrder>("newest");
+  const [selectedCategory, setSelectedCategory] = useState<"all" | ElectronicsCategory>("all");
+  const [priceRange, setPriceRange] = useState<CataloguePriceRange>("all");
   const syncedUserId = useRef<number | null>(null);
   const commerce = trpc.commerce.get.useQuery(undefined, { enabled: isAuthenticated });
   const inventory = trpc.inventory.listPublic.useQuery();
@@ -151,19 +153,7 @@ export default function Home() {
     if (isAuthenticated) setRemoteWishlist.mutate({ items: items.map(toRemoteProduct) }, { onError: () => toast.error("Saved items sync paused", { description: "Please try again shortly." }) });
   };
 
-  const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    const filtered = catalogueProducts.filter((product) => {
-      const matchingText = !query || [product.name, product.brand, product.category, ...product.specifications.map((specification) => specification.value)].join(" ").toLowerCase().includes(query);
-      return matchingText;
-    });
-    return [...filtered].sort((left, right) => {
-      if (sortOrder === "price-low") return left.price - right.price;
-      if (sortOrder === "price-high") return right.price - left.price;
-      if (sortOrder === "category") return left.category.localeCompare(right.category) || left.catalogueOrder - right.catalogueOrder;
-      return left.catalogueOrder - right.catalogueOrder;
-    });
-  }, [catalogueProducts, search, sortOrder]);
+  const filteredProducts = useMemo(() => filterCatalogueProducts(catalogueProducts, { search, category: selectedCategory, priceRange, sortOrder }), [catalogueProducts, priceRange, search, selectedCategory, sortOrder]);
 
   const cartCount = useMemo(() => cartItems.reduce((total, item) => total + item.quantity, 0), [cartItems]);
   const cartSubtotal = useMemo(() => cartItems.reduce((total, item) => total + item.price * item.quantity, 0), [cartItems]);
@@ -222,6 +212,8 @@ export default function Home() {
   const resetCatalogue = () => {
     setSearch("");
     setSortOrder("newest");
+    setSelectedCategory("all");
+    setPriceRange("all");
   };
 
   return (
@@ -244,11 +236,11 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="border-b border-[#ECE5DC] bg-white"><div className="container no-scrollbar flex gap-3 overflow-x-auto py-4 sm:gap-4">{categories.map((category) => { const Icon = category.icon; const active = search.trim().toLowerCase() === category.label.toLowerCase(); return <button key={category.label} type="button" onClick={() => setSearch(active ? "" : category.label)} className="group flex min-w-[94px] flex-col items-center gap-2.5"><span className={`category-shelf grid h-[52px] w-[52px] place-items-center rounded-[18px] ${category.tone} ${active ? "ring-2 ring-[#EF6A3A]" : ""} transition group-hover:-translate-y-1`}><Icon className="h-5 w-5" /></span><span className="whitespace-nowrap text-[11px] font-extrabold text-[#44535A] group-hover:text-[#EF6A3A]">{category.label}</span></button>; })}</div></section>
+        <section className="border-b border-[#ECE5DC] bg-white"><div className="container no-scrollbar flex gap-3 overflow-x-auto py-4 sm:gap-4">{categories.map((category) => { const Icon = category.icon; const active = selectedCategory === category.label; return <button key={category.label} type="button" onClick={() => setSelectedCategory(active ? "all" : category.label)} className="group flex min-w-[94px] flex-col items-center gap-2.5" aria-pressed={active}><span className={`category-shelf grid h-[52px] w-[52px] place-items-center rounded-[18px] ${category.tone} ${active ? "ring-2 ring-[#EF6A3A]" : ""} transition group-hover:-translate-y-1`}><Icon className="h-5 w-5" /></span><span className="whitespace-nowrap text-[11px] font-extrabold text-[#44535A] group-hover:text-[#EF6A3A]">{category.label}</span></button>; })}</div></section>
         <section className="container py-6 sm:py-8"><div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.7fr)]"><div className="hero-panel relative min-h-[365px] overflow-hidden rounded-[32px] bg-[#F3E7D8] px-7 py-8 sm:min-h-[420px] sm:px-11 sm:py-11"><img src="/manus-storage/prime-cart-hero_46c2e86b.jpg" alt="A curated marketplace collection on a warm editorial display" className="absolute inset-0 h-full w-full object-cover object-[67%_center]" /><div className="absolute inset-0 bg-gradient-to-r from-[#F9F0E7] via-[#F9F0E7]/88 to-transparent" /><div className="relative z-10 max-w-[500px]"><span className="inline-flex items-center gap-2 rounded-full border border-[#17232B]/10 bg-white/75 px-3 py-1.5 text-[10px] font-extrabold tracking-[0.14em] text-[#496059] uppercase"><Zap className="h-3.5 w-3.5 text-[#EF6A3A]" /> Marketplace, considered</span><h1 className="font-display mt-6 text-[45px] leading-[0.94] tracking-[-0.055em] text-[#17232B] sm:text-[64px]">Useful pieces, <em className="font-normal text-[#C9532B]">well chosen.</em></h1><p className="mt-5 max-w-[390px] text-sm leading-6 font-medium text-[#536066] sm:text-[15px]">Thirty practical products for technology and home, with clear details and a calm path to checkout.</p><button type="button" onClick={() => document.getElementById("marketplace-grid")?.scrollIntoView({ behavior: "smooth", block: "start" })} className="mt-7 inline-flex h-12 items-center gap-2 rounded-2xl bg-[#17232B] px-5 text-sm font-extrabold text-white transition hover:bg-[#EF6A3A] active:scale-[0.97]">Browse the marketplace <ArrowRight className="h-4 w-4" /></button></div></div><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1"><div className="rounded-[28px] bg-[#17232B] p-6 text-white"><p className="text-[10px] font-extrabold tracking-[0.14em] text-[#FFB088] uppercase">Clear decisions</p><p className="font-display mt-4 text-3xl leading-[0.96] tracking-[-0.045em]">Details first. Checkout when ready.</p><p className="mt-4 text-sm leading-6 font-medium text-white/65">No membership fee. Delivery and secure payment are shown before the final step.</p></div><div className="rounded-[28px] border border-[#E4DED4] bg-[#EEF2EB] p-6"><p className="text-[10px] font-extrabold tracking-[0.14em] text-[#60715F] uppercase">Home & living</p><p className="font-display mt-4 text-3xl leading-[0.96] tracking-[-0.045em] text-[#304237]">A considered room starts here.</p><p className="mt-4 text-sm leading-6 font-medium text-[#657463]">Browse furniture, lighting, decor, and everyday living pieces alongside tech.</p></div></div></div></section>
 
         <section id="marketplace-grid" className="container pb-14 sm:pb-18"><div className="mb-7"><p className="eyebrow">The marketplace catalogue</p><div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="section-title">Browse with <em>clarity.</em></h2><p className="mt-3 max-w-2xl text-sm leading-6 font-medium text-[#687570]">Prices and specifications are listed directly from the supplied catalogue data. Ratings, reviews, discounts, and promotional claims are intentionally not shown without independently sourced customer evidence.</p></div><div className="rounded-full bg-[#F4E7DE] px-3.5 py-2 text-xs font-extrabold text-[#B74C2A]">{filteredProducts.length} of {catalogueProducts.length} products</div></div></div>
-          <div><div className="mb-5 flex flex-col gap-3 rounded-[22px] border border-[#EAE1D7] bg-white p-3 shadow-[0_8px_25px_rgba(23,35,43,0.04)] sm:flex-row sm:items-center sm:justify-between"><div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#85908A]" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, brand or category" className="h-10 w-full rounded-xl border border-[#E7DED4] bg-[#FBF9F5] pr-3 pl-9 text-sm font-semibold outline-none focus:border-[#EF6A3A]" /></div><label className="filter-select"><span>Sort</span><select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as SortOrder)}><option value="newest">Newest</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="category">Category</option></select></label></div>
+          <div><div className="mb-5 flex flex-col gap-3 rounded-[22px] border border-[#EAE1D7] bg-white p-3 shadow-[0_8px_25px_rgba(23,35,43,0.04)] lg:flex-row lg:items-center"><div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#85908A]" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, brand or category" aria-label="Search products" className="h-10 w-full rounded-xl border border-[#E7DED4] bg-[#FBF9F5] pr-3 pl-9 text-sm font-semibold outline-none focus:border-[#EF6A3A]" /></div><div className="grid grid-cols-1 gap-2 sm:grid-cols-3"><label className="filter-select"><span>Category</span><select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value as "all" | ElectronicsCategory)} aria-label="Filter by category"><option value="all">All categories</option>{categories.map((category) => <option key={category.label} value={category.label}>{category.label}</option>)}</select></label><label className="filter-select"><span>Price</span><select value={priceRange} onChange={(event) => setPriceRange(event.target.value as CataloguePriceRange)} aria-label="Filter by price"><option value="all">All prices</option><option value="under-10k">Under ₹10,000</option><option value="10k-50k">₹10,000–₹49,999</option><option value="50k-100k">₹50,000–₹99,999</option><option value="100k-plus">₹1,00,000+</option></select></label><label className="filter-select"><span>Sort</span><select value={sortOrder} onChange={(event) => setSortOrder(event.target.value as CatalogueSortOrder)}><option value="newest">Newest</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="category">Category</option></select></label></div>{(selectedCategory !== "all" || priceRange !== "all" || search) && <button type="button" onClick={resetCatalogue} className="h-10 rounded-xl border border-[#E6D9CE] px-3 text-xs font-extrabold text-[#8A5A46] transition hover:border-[#EF6A3A] hover:text-[#C9532B]">Clear</button>}</div>
             {filteredProducts.length ? <div className="grid gap-x-4 gap-y-8 sm:grid-cols-2 xl:grid-cols-4">{filteredProducts.map((product) => <ProductCard key={product.id} product={product} saved={wishlist.has(product.id)} onSave={() => toggleWishlist(product)} onAdd={() => addToCart(product)} onBuy={() => buyNow(product)} onQuickView={() => setQuickViewProduct(product)} />)}</div> : <div className="rounded-[28px] border border-dashed border-[#DCCFC2] bg-[#FBF6F0] px-6 py-16 text-center"><Search className="mx-auto h-7 w-7 text-[#C9532B]" /><h3 className="font-display mt-4 text-3xl">Nothing matches this edit.</h3><p className="mt-2 text-sm font-medium text-[#70807B]">Try another search term or return to the full catalogue.</p><button type="button" onClick={resetCatalogue} className="mt-5 rounded-2xl bg-[#17232B] px-4 py-3 text-sm font-extrabold text-white transition hover:bg-[#EF6A3A]">Show all products</button></div>}</div>
         </section>
       </main>

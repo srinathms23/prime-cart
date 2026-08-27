@@ -9,11 +9,13 @@ const store = vi.hoisted(() => ({
   replaceUserWishlist: vi.fn(async () => []),
   seedInventoryIfEmpty: vi.fn(async () => undefined),
   listInventory: vi.fn(async () => []),
+  getInventoryStockOverview: vi.fn(async () => ({ activeProductCount: 30, totalUnits: 187, lowStockCount: 14, outOfStockCount: 0, threshold: 5, products: [] })),
   createInventoryProduct: vi.fn(async (input) => ({ id: 999, ...input })),
   updateInventoryProduct: vi.fn(async (id, input) => ({ id, ...input })),
   deleteInventoryProduct: vi.fn(async (id) => ({ id })),
   getUserOrders: vi.fn(async () => []),
   getAllOrders: vi.fn(async () => []),
+  updateOrderFulfillmentStatus: vi.fn(async (id, status) => ({ id, status })),
 }));
 
 vi.mock("./db", () => store);
@@ -51,9 +53,25 @@ describe("inventory and orders routers", () => {
     await expect(caller.inventory.create(product)).rejects.toThrow("required permission");
   });
 
+  it("returns stock-alert data only to administrators", async () => {
+    const caller = appRouter.createCaller(context("admin", 1));
+    await caller.inventory.stockOverview();
+    expect(store.seedInventoryIfEmpty).toHaveBeenCalledOnce();
+    expect(store.getInventoryStockOverview).toHaveBeenCalledOnce();
+  });
+
   it("returns only the authenticated customer’s orders", async () => {
     const caller = appRouter.createCaller(context("user", 73));
     await caller.orders.mine();
     expect(store.getUserOrders).toHaveBeenCalledWith(73);
+  });
+
+  it("allows only an administrator to move a paid order through fulfilment", async () => {
+    const admin = appRouter.createCaller(context("admin", 1));
+    await admin.orders.updateFulfillment({ id: 77, status: "shipped" });
+    expect(store.updateOrderFulfillmentStatus).toHaveBeenCalledWith(77, "shipped");
+
+    const customer = appRouter.createCaller(context("user", 73));
+    await expect(customer.orders.updateFulfillment({ id: 77, status: "delivered" })).rejects.toThrow("required permission");
   });
 });

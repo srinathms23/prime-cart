@@ -196,7 +196,13 @@ export type ManagedInventoryInput = {
   isActive: boolean;
 };
 
-type StoredInventoryProduct = Awaited<ReturnType<typeof listInventory>>[number];
+export const LOW_STOCK_THRESHOLD = 5;
+
+const seededStockByProductId: Record<number, number> = {
+  101: 12, 102: 8, 103: 7, 104: 5, 105: 9, 106: 6, 107: 4, 108: 5, 109: 10, 110: 3,
+  111: 6, 112: 9, 113: 7, 114: 5, 115: 8, 116: 4, 117: 6, 118: 3, 119: 4, 120: 5,
+  121: 7, 122: 10, 123: 4, 124: 5, 125: 3, 126: 8, 127: 4, 128: 6, 129: 9, 130: 5,
+};
 
 function parseDetails<T>(value: string, fallback: T): T {
   try {
@@ -269,7 +275,7 @@ export async function seedInventoryIfEmpty() {
     ...inventoryValues({
       ...product,
       imageSourceUrl: null,
-      stockQuantity: 0,
+      stockQuantity: seededStockByProductId[product.id] ?? 0,
       isActive: true,
     }),
   })));
@@ -302,6 +308,23 @@ export async function listInventory(includeInactive = false) {
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
   }));
+}
+
+export function summarizeInventoryStock(products: Awaited<ReturnType<typeof listInventory>>) {
+  const activeProducts = products.filter((product) => product.isActive);
+  const lowStockProducts = activeProducts.filter((product) => product.stockQuantity <= LOW_STOCK_THRESHOLD);
+  return {
+    activeProductCount: activeProducts.length,
+    totalUnits: activeProducts.reduce((total, product) => total + product.stockQuantity, 0),
+    lowStockCount: lowStockProducts.length,
+    outOfStockCount: activeProducts.filter((product) => product.stockQuantity === 0).length,
+    threshold: LOW_STOCK_THRESHOLD,
+    products: lowStockProducts.sort((left, right) => left.stockQuantity - right.stockQuantity || left.name.localeCompare(right.name)),
+  };
+}
+
+export async function getInventoryStockOverview() {
+  return summarizeInventoryStock(await listInventory(true));
 }
 
 export async function createInventoryProduct(input: ManagedInventoryInput) {
@@ -367,6 +390,24 @@ export async function getOrderByStripeSession(stripeSessionId: string) {
   if (!db) throw new Error("Database unavailable");
   const [order] = await db.select().from(orders).where(eq(orders.stripeSessionId, stripeSessionId)).limit(1);
   return order;
+}
+
+export function getFulfillmentTransitionError(order: Pick<typeof orders.$inferSelect, "paymentStatus" | "status">, status: "shipped" | "delivered") {
+  if (order.paymentStatus !== "paid") return "Only paid orders can move through fulfilment.";
+  if (status === "shipped" && order.status !== "processing") return "Only processing orders can be marked shipped.";
+  if (status === "delivered" && order.status !== "shipped") return "Only shipped orders can be marked delivered.";
+  return undefined;
+}
+
+export async function updateOrderFulfillmentStatus(orderId: number, status: "shipped" | "delivered") {
+  const db = await getDb();
+  if (!db) throw new Error("Database unavailable");
+  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order) throw new Error("Order not found.");
+  const transitionError = getFulfillmentTransitionError(order, status);
+  if (transitionError) throw new Error(transitionError);
+  await db.update(orders).set({ status }).where(eq(orders.id, orderId));
+  return { id: orderId, status };
 }
 
 export function getOrderUpdateForStripeEvent(eventType: string) {

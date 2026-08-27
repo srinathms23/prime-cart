@@ -3,7 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { createInventoryProduct, deleteInventoryProduct, getAllOrders, getUserCart, getUserOrders, getUserWishlist, listInventory, mergeUserCommerce, replaceUserCart, replaceUserWishlist, seedInventoryIfEmpty, updateInventoryProduct } from "./db";
+import { createInventoryProduct, deleteInventoryProduct, getAllOrders, getInventoryStockOverview, getUserCart, getUserOrders, getUserWishlist, listInventory, mergeUserCommerce, replaceUserCart, replaceUserWishlist, seedInventoryIfEmpty, updateInventoryProduct, updateOrderFulfillmentStatus } from "./db";
 import { createCheckoutSession } from "./stripe";
 
 const productImageSchema = z.string().refine((value) => {
@@ -98,6 +98,10 @@ export const appRouter = router({
       await seedInventoryIfEmpty();
       return listInventory(true);
     }),
+    stockOverview: adminProcedure.query(async () => {
+      await seedInventoryIfEmpty();
+      return getInventoryStockOverview();
+    }),
     create: adminProcedure.input(inventoryProductSchema).mutation(({ input }) => createInventoryProduct(input)),
     update: adminProcedure.input(z.object({ id: z.number().int().positive(), product: inventoryProductSchema })).mutation(({ input }) => updateInventoryProduct(input.id, input.product)),
     remove: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ input }) => deleteInventoryProduct(input.id)),
@@ -105,6 +109,7 @@ export const appRouter = router({
   orders: router({
     mine: protectedProcedure.query(({ ctx }) => getUserOrders(ctx.user.id)),
     all: adminProcedure.query(() => getAllOrders()),
+    updateFulfillment: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["shipped", "delivered"]) })).mutation(({ input }) => updateOrderFulfillmentStatus(input.id, input.status)),
   }),
   payments: router({
     createCheckout: protectedProcedure.input(z.object({ shipping: shippingSchema })).mutation(async ({ ctx, input }) => {
