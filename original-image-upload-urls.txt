@@ -1,0 +1,124 @@
+Uploading file (webdev private): ./acer-aspire-5.jpg (size: 182234 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/acer-aspire-5_2664426e.jpg
+Uploading file (webdev private): ./asus-rog-strix-g16.webp (size: 21718 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/asus-rog-strix-g16_e301ba31.webp
+Uploading file (webdev private): ./asus-vivobook-15.jpg (size: 94729 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/asus-vivobook-15_b4755d45.jpg
+Uploading file (webdev private): ./decorative-floor-lamp.jpg (size: 8304 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/decorative-floor-lamp_23de683b.jpg
+Uploading file (webdev private): ./dell-inspiron-14.jpg (size: 18714 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/dell-inspiron-14_7cdd5acd.jpg
+Uploading file (webdev private): ./ergonomic-office-chair.jpg (size: 15829 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/ergonomic-office-chair_1c388464.jpg
+Uploading file (webdev private): ./galaxy-s25.png (size: 67323 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/galaxy-s25_3a0971a7.png
+Uploading file (webdev private): ./home-decor-set.jpg (size: 571416 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/home-decor-set_b71c2f7d.jpg
+Uploading file (webdev private): ./hp-pavilion-14.jpg (size: 232587 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/hp-pavilion-14_08f77474.jpg
+Uploading file (webdev private): ./hp-victus-15.jpg (size: 228855 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/hp-victus-15_cee3e42a.jpg
+Uploading file (webdev private): ./iphone-16.jpg (size: 23574 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/iphone-16_8b01b8ae.jpg
+Uploading file (webdev private): ./lenovo-ideapad-slim-5.png (size: 201453 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/lenovo-ideapad-slim-5_dae9c661.png
+Uploading file (webdev private): ./lenovo-loq-15.png (size: 376513 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/lenovo-loq-15_2e3cf5b1.png
+Uploading file (webdev private): ./macbook-air-m4.png (size: 323395 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/macbook-air-m4_9b4f38ca.png
+Uploading file (webdev private): ./modern-led-ceiling-light.jpg (size: 26294 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/modern-led-ceiling-light_89aedfd1.jpg
+Uploading file (webdev private): ./modern-sofa.jpg (size: 77145 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/modern-sofa_1c3d839b.jpg
+Uploading file (webdev private): ./motorola-edge-60-pro.png (size: 265525 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/motorola-edge-60-pro_abfdcc86.png
+Uploading file (webdev private): ./msi-modern-14.jpg (size: 48159 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/msi-modern-14_d4042013.jpg
+Uploading file (webdev private): ./nothing-phone-3.png (size: 2180987 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/nothing-phone-3_791395d1.png
+Uploading file (webdev private): ./oneplus-13.jpg (size: 95937 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/oneplus-13_7fad967f.jpg
+Uploading file (webdev private): ./oppo-find-x8.png (size: 586343 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/oppo-find-x8_60f24c23.png
+Uploading file (webdev private): ./pixel-9.webp (size: 25854 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/pixel-9_97f358ea.webp
+Uploading file (webdev private): ./queen-wooden-bed.jpg (size: 292122 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/queen-wooden-bed_4e718a16.jpg
+Uploading file (webdev private): ./realme-gt-7.webp (size: 145350 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/realme-gt-7_df10d192.webp
+Uploading file (webdev private): ./scandinavian-coffee-table.jpg (size: 394169 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/scandinavian-coffee-table_4aa7a29d.jpg
+Uploading file (webdev private): ./smart-aroma-diffuser.jpg (size: 211853 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/smart-aroma-diffuser_a32c9bac.jpg
+Uploading file (webdev private): ./smart-table-lamp.jpg (size: 3820 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/smart-table-lamp_0a63a8c8.jpg
+Uploading file (webdev private): ./storage-wardrobe.jpg (size: 394169 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/storage-wardrobe_6c156216.jpg
+Uploading file (webdev private): ./vivo-x200.jpg (size: 868810 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/vivo-x200_4d5ee827.jpg
+Uploading file (webdev private): ./xiaomi-15.jpg (size: 7242 bytes)
+File uploaded successfully!
+Storage Path: /manus-storage/xiaomi-15_97f1a04f.jpg
+
+========== Upload Summary ==========
+[SUCCESS] ./acer-aspire-5.jpg -> /manus-storage/acer-aspire-5_2664426e.jpg
+[SUCCESS] ./asus-rog-strix-g16.webp -> /manus-storage/asus-rog-strix-g16_e301ba31.webp
+[SUCCESS] ./asus-vivobook-15.jpg -> /manus-storage/asus-vivobook-15_b4755d45.jpg
+[SUCCESS] ./decorative-floor-lamp.jpg -> /manus-storage/decorative-floor-lamp_23de683b.jpg
+[SUCCESS] ./dell-inspiron-14.jpg -> /manus-storage/dell-inspiron-14_7cdd5acd.jpg
+[SUCCESS] ./ergonomic-office-chair.jpg -> /manus-storage/ergonomic-office-chair_1c388464.jpg
+[SUCCESS] ./galaxy-s25.png -> /manus-storage/galaxy-s25_3a0971a7.png
+[SUCCESS] ./home-decor-set.jpg -> /manus-storage/home-decor-set_b71c2f7d.jpg
+[SUCCESS] ./hp-pavilion-14.jpg -> /manus-storage/hp-pavilion-14_08f77474.jpg
+[SUCCESS] ./hp-victus-15.jpg -> /manus-storage/hp-victus-15_cee3e42a.jpg
+[SUCCESS] ./iphone-16.jpg -> /manus-storage/iphone-16_8b01b8ae.jpg
+[SUCCESS] ./lenovo-ideapad-slim-5.png -> /manus-storage/lenovo-ideapad-slim-5_dae9c661.png
+[SUCCESS] ./lenovo-loq-15.png -> /manus-storage/lenovo-loq-15_2e3cf5b1.png
+[SUCCESS] ./macbook-air-m4.png -> /manus-storage/macbook-air-m4_9b4f38ca.png
+[SUCCESS] ./modern-led-ceiling-light.jpg -> /manus-storage/modern-led-ceiling-light_89aedfd1.jpg
+[SUCCESS] ./modern-sofa.jpg -> /manus-storage/modern-sofa_1c3d839b.jpg
+[SUCCESS] ./motorola-edge-60-pro.png -> /manus-storage/motorola-edge-60-pro_abfdcc86.png
+[SUCCESS] ./msi-modern-14.jpg -> /manus-storage/msi-modern-14_d4042013.jpg
+[SUCCESS] ./nothing-phone-3.png -> /manus-storage/nothing-phone-3_791395d1.png
+[SUCCESS] ./oneplus-13.jpg -> /manus-storage/oneplus-13_7fad967f.jpg
+[SUCCESS] ./oppo-find-x8.png -> /manus-storage/oppo-find-x8_60f24c23.png
+[SUCCESS] ./pixel-9.webp -> /manus-storage/pixel-9_97f358ea.webp
+[SUCCESS] ./queen-wooden-bed.jpg -> /manus-storage/queen-wooden-bed_4e718a16.jpg
+[SUCCESS] ./realme-gt-7.webp -> /manus-storage/realme-gt-7_df10d192.webp
+[SUCCESS] ./scandinavian-coffee-table.jpg -> /manus-storage/scandinavian-coffee-table_4aa7a29d.jpg
+[SUCCESS] ./smart-aroma-diffuser.jpg -> /manus-storage/smart-aroma-diffuser_a32c9bac.jpg
+[SUCCESS] ./smart-table-lamp.jpg -> /manus-storage/smart-table-lamp_0a63a8c8.jpg
+[SUCCESS] ./storage-wardrobe.jpg -> /manus-storage/storage-wardrobe_6c156216.jpg
+[SUCCESS] ./vivo-x200.jpg -> /manus-storage/vivo-x200_4d5ee827.jpg
+[SUCCESS] ./xiaomi-15.jpg -> /manus-storage/xiaomi-15_97f1a04f.jpg
+=====================================
+Total: 30, Success: 30, Failed: 0

@@ -1,9 +1,9 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
-import { getUserCart, getUserWishlist, mergeUserCommerce, replaceUserCart, replaceUserWishlist } from "./db";
+import { createInventoryProduct, deleteInventoryProduct, getAllOrders, getUserCart, getUserOrders, getUserWishlist, listInventory, mergeUserCommerce, replaceUserCart, replaceUserWishlist, seedInventoryIfEmpty, updateInventoryProduct } from "./db";
 import { createCheckoutSession } from "./stripe";
 
 const productImageSchema = z.string().refine((value) => {
@@ -30,6 +30,25 @@ const productSnapshotSchema = z.object({
 });
 
 const cartSnapshotSchema = productSnapshotSchema.extend({ quantity: z.number().int().min(1).max(99) });
+
+const inventoryProductSchema = z.object({
+  brand: z.string().trim().min(1).max(120),
+  name: z.string().trim().min(1).max(255),
+  category: z.string().trim().min(1).max(96),
+  price: z.number().int().nonnegative(),
+  originalPrice: z.number().int().nonnegative(),
+  offer: z.string().trim().min(1).max(64),
+  delivery: z.string().trim().min(1).max(128),
+  image: productImageSchema,
+  imageSourceUrl: z.string().url().nullable().optional(),
+  tone: z.string().trim().min(1).max(64),
+  popularity: z.number().int().nonnegative(),
+  badge: z.string().trim().max(64).nullable().optional(),
+  colors: z.array(z.string().trim().min(1).max(64)).max(12),
+  specifications: z.array(z.object({ label: z.string().trim().min(1).max(64), value: z.string().trim().min(1).max(255) })).max(16),
+  stockQuantity: z.number().int().nonnegative().max(1_000_000),
+  isActive: z.boolean(),
+});
 
 const shippingSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
@@ -69,6 +88,23 @@ export const appRouter = router({
     setWishlist: protectedProcedure.input(z.object({ items: z.array(productSnapshotSchema).max(100) })).mutation(async ({ ctx, input }) =>
       replaceUserWishlist(ctx.user.id, input.items),
     ),
+  }),
+  inventory: router({
+    listPublic: publicProcedure.query(async () => {
+      await seedInventoryIfEmpty();
+      return listInventory(false);
+    }),
+    listAdmin: adminProcedure.query(async () => {
+      await seedInventoryIfEmpty();
+      return listInventory(true);
+    }),
+    create: adminProcedure.input(inventoryProductSchema).mutation(({ input }) => createInventoryProduct(input)),
+    update: adminProcedure.input(z.object({ id: z.number().int().positive(), product: inventoryProductSchema })).mutation(({ input }) => updateInventoryProduct(input.id, input.product)),
+    remove: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(({ input }) => deleteInventoryProduct(input.id)),
+  }),
+  orders: router({
+    mine: protectedProcedure.query(({ ctx }) => getUserOrders(ctx.user.id)),
+    all: adminProcedure.query(() => getAllOrders()),
   }),
   payments: router({
     createCheckout: protectedProcedure.input(z.object({ shipping: shippingSchema })).mutation(async ({ ctx, input }) => {

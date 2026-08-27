@@ -14,4 +14,8 @@ describe("expanded marketplace catalogue", () => {
     const legacyProduct = { ...electronicsProducts[20], popularity: -21 };
     expect(toProductSnapshot(legacyProduct).popularity).toBe(0);
   });
+
+  it("uses managed original-image assets rather than external stock placeholder URLs", () => {
+    expect(electronicsProducts.every((product) => product.image.startsWith("/manus-storage/"))).toBe(true);
+  });
 });

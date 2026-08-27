@@ -2,7 +2,7 @@
 import express, { type Express, type Request, type Response } from "express";
 import Stripe from "stripe";
 import type { User } from "../drizzle/schema";
-import { getUserCart, setUserStripeCustomerId } from "./db";
+import { createOrderFromCart, getUserCart, setUserStripeCustomerId, updateOrderForStripeEvent } from "./db";
 import { ENV } from "./_core/env";
 
 export type CheckoutShippingDetails = {
@@ -79,11 +79,12 @@ export async function createCheckoutSession(user: User, origin: string, shipping
     },
   });
   if (!session.url) throw new Error("Stripe did not return a secure checkout link.");
+  await createOrderFromCart(user.id, session.id, cart, shipping);
   return { url: session.url, sessionId: session.id };
 }
 
 export function registerStripeWebhook(app: Express) {
-  app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), (req: Request, res: Response) => {
+  app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req: Request, res: Response) => {
     if (!ENV.stripeWebhookSecret) return res.status(500).json({ error: "Stripe webhook secret is not configured" });
     const signature = req.headers["stripe-signature"];
     if (typeof signature !== "string") return res.status(400).json({ error: "Missing Stripe signature" });
@@ -101,6 +102,10 @@ export function registerStripeWebhook(app: Express) {
       return res.json({ verified: true });
     }
 
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.id && event.type.startsWith("checkout.session.")) {
+      await updateOrderForStripeEvent(session.id, event.type);
+    }
     console.log("[Stripe webhook]", { type: event.type, id: event.id, createdAt: new Date(event.created * 1000).toISOString() });
     return res.json({ received: true });
   });

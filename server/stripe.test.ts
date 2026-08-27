@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getOrderUpdateForStripeEvent } from "./db";
 import { buildCheckoutLineItems } from "./stripe";
 
 describe("Stripe Checkout line items", () => {
@@ -36,5 +37,14 @@ describe("Stripe Checkout line items", () => {
         },
       },
     }]);
+  });
+});
+
+describe("Stripe Checkout order status", () => {
+  it("maps verified completion and failure events to customer-visible order states", () => {
+    expect(getOrderUpdateForStripeEvent("checkout.session.completed")).toEqual({ paymentStatus: "paid", status: "processing" });
+    expect(getOrderUpdateForStripeEvent("checkout.session.expired")).toEqual({ paymentStatus: "failed", status: "cancelled" });
+    expect(getOrderUpdateForStripeEvent("checkout.session.async_payment_failed")).toEqual({ paymentStatus: "failed", status: "cancelled" });
+    expect(getOrderUpdateForStripeEvent("checkout.session.created")).toBeUndefined();
   });
 });

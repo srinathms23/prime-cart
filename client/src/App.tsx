@@ -7,6 +7,8 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import SavedItems from "./pages/SavedItems";
 import Checkout from "./pages/Checkout";
+import AdminInventory from "./pages/AdminInventory";
+import Orders from "./pages/Orders";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -15,6 +17,8 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/saved"} component={SavedItems} />
       <Route path={"/checkout"} component={Checkout} />
+      <Route path={"/orders"} component={Orders} />
+      <Route path={"/admin"} component={AdminInventory} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

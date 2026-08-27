@@ -56,3 +56,16 @@
 - [x] Add automated coverage for the 30-product marketplace catalogue and non-negative snapshot popularity.
 - [x] Create a private GitHub repository containing the finalized PRIME CART project.
 - [x] Verify the GitHub repository’s default branch and provide the live deployment address and publishing steps.
+- [x] Add database-backed inventory records, stock levels, and admin-only product CRUD procedures.
+- [x] Create an admin product-management interface for adding, editing, and removing inventory products.
+- [x] Add database-backed customer orders with line items, payment state, and fulfilment status.
+- [x] Create a protected customer order-history page with clear current order status.
+- [x] Replace placeholder catalogue photos with documented publisher or retailer image references and staged managed assets.
+- [x] Verify admin role protection, inventory CRUD, customer order visibility, and responsive customer flows.
+- [x] Record a product-level source-reference page for each current catalogue image, clearly distinguishing product pages from product-family or collection pages.
+- [x] Create a no-charge Stripe test-mode checkout session and verify its order record, line items, and pending status in customer history.
+- [x] Document narrow-viewport layout-only scope where a separate authenticated browser context could not inherit the OAuth session.
+- [x] Replace stale current cart image snapshots that still referenced prior placeholder URLs; no validation order remains to rewrite.
+- [x] Remove the temporary no-charge validation order after recording its verified history behavior.
+- [x] Add regression coverage ensuring stale browser cart and wishlist metadata cannot overwrite verified server imagery.
+- [x] Add automated coverage for Stripe Checkout event-to-order-status mapping.
